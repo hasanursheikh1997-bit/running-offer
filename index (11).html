@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Running Offer App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { margin:0; font-family:'Segoe UI',Arial; background:#eef1f7; transition:0.25s; }
+.dark { background:#000; color:white; }
+
+/* NAVBAR */
+.navbar { position: sticky; top:0; background:#0052cc; padding:0; z-index:100; display:flex; align-items:center; }
+.nav-items { display:flex; position:relative; flex:1; }
+.nav-btn { padding:12px 20px; background:#0052cc; border:none; color:white; cursor:pointer; position:relative; }
+.nav-btn:hover { background:#003d99; }
+.nav-btn.active-tab { background:#001f55 !important; }
+.navbar::after { content:""; position:absolute; bottom:0; left:0; width:100%; height:4px; background:#008cff; }
+
+/* DROPDOWN */
+.dropdown-content { display:none; position:absolute; background:#0052cc; top:100%; left:0; min-width:180px; z-index:1000; flex-direction:column; }
+.dropdown-content div { padding:10px; cursor:pointer; border-bottom:1px solid #003d99; }
+.dropdown-content div:last-child{ border-bottom:none; }
+.dropdown-content div:hover { background:#003d99; }
+.nav-btn.dropdown:hover .dropdown-content { display:flex; flex-direction:column; }
+
+/* SEARCH */
+.search-box { margin:15px auto; max-width:900px; }
+.search-box input { width:100%; padding:12px; border-radius:10px; border:1px solid #ccc; font-size:16px; }
+.dark .search-box input { background:#222; color:white; border-color:#555; }
+
+/* CONTAINER */
+.container { max-width:900px; margin:auto; padding:20px; }
+
+/* BUTTONS */
+button { padding:10px 16px; background:#0052cc; color:white; border:none; border-radius:8px; cursor:pointer; }
+button:hover { background:#003d99; }
+.dark button { background:#333; }
+.dark button:hover { background:#555; }
+
+/* FOOTER */
+.footer { text-align:center; padding:20px; background:#222; color:#ccc; margin-top:40px; }
+.dark .footer { background:#000; }
+
+/* MODAL */
+.modal-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:#00000088; display:flex; justify-content:center; align-items:center; z-index:999; }
+.modal-card { background:white; padding:25px; border-radius:14px; max-width:500px; width:90%; box-shadow:0 5px 15px #00000050; position:relative; }
+.dark .modal-card { background:#111; color:white; }
+.modal-card h2 { margin-top:0; }
+.modal-card label { display:block; margin-top:10px; }
+.modal-card input, .modal-card textarea, .modal-card select { width:100%; padding:10px; margin-top:6px; border:1px solid #ccc; border-radius:8px; }
+.dark .modal-card input, .dark .modal-card textarea, .dark .modal-card select { background:#222; color:white; border-color:#555; }
+.close-btn { position:absolute; top:10px; right:15px; background:#d80000; color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer; font-weight:bold; }
+.close-btn:hover { background:#b00000; }
+
+/* ITEM BOX */
+.item-box { background:white; padding:15px; border-radius:12px; margin-top:12px; box-shadow:0 3px 10px #00000030; position:relative; cursor:pointer; }
+.dark .item-box { background:#111; color:white; }
+.item-header { font-size:18px; font-weight:bold; }
+.desc { margin-top:6px; color:#444; }
+.dark .desc { color:#bbb; }
+.small-btn { background:#0052cc; padding:6px 12px; color:white; border-radius:6px; margin-right:6px; display:inline-block; text-decoration:none; margin-top:10px; }
+.delete-btn { background:#d80000 !important; }
+.date-badge { background:#008c3c; padding:5px 10px; border-radius:6px; color:white; display:inline-block; margin-top:10px; }
+.expired-badge { background:#e60000; padding:5px 10px; border-radius:6px; color:white; display:inline-block; margin-top:10px; }
+
+/* ENTRY DATE TOOLTIP */
+.entry-date {
+    display:none;
+    position:absolute;
+    top:-24px;
+    right:10px;
+    background:#000;
+    color:#fff;
+    padding:4px 8px;
+    border-radius:6px;
+    font-size:12px;
+    white-space:nowrap;
+    z-index:10;
+}
+.item-box:hover .entry-date { display:block; }
+</style>
+</head>
+<body id="body">
+
+<div class="navbar">
+    <div class="nav-items">
+        <div class="nav-btn active-tab" onclick="openAddItem()">Add Item</div>
+        <div class="nav-btn" onclick="showTab('running')">Running Offer</div>
+        <div class="nav-btn" onclick="showTab('policy')">Head Office Policy</div>
+        <div class="nav-btn" onclick="showTab('expired')">Expired</div>
+        <div class="nav-btn" onclick="showTab('calculation')">Calculation</div>
+        <div class="nav-btn dropdown">Product Knowledge
+            <div class="dropdown-content">
+                <div onclick="filterKnowledge('Freeze')">Freeze</div>
+                <div onclick="filterKnowledge('Home Appliance')">Home Appliance</div>
+                <div onclick="filterKnowledge('Electric Appliance')">Electric Appliance</div>
+                <div onclick="filterKnowledge('Television')">Television</div>
+                <div onclick="filterKnowledge('Other Knowledge')">Other Knowledge</div>
+                <div onclick="filterKnowledge('Air Conditioner')">Air Conditioner</div>
+                <div onclick="filterKnowledge('Washing Machine')">Washing Machine</div>
+                <div onclick="filterKnowledge('T20')">T20</div>
+                <div onclick="filterKnowledge('Accounts Head')">Accounts Head</div>
+            </div>
+        </div>
+    </div>
+    <div class="nav-btn" onclick="toggleDark()">🌙</div>
+</div>
+
+<div class="search-box">
+    <input id="search" placeholder="সার্চ করুন..." onkeyup="render()">
+</div>
+
+<div class="container">
+    <div id="running" style="display:none;"></div>
+    <div id="policy" style="display:none;"></div>
+    <div id="expired" style="display:none;"></div>
+    <div id="calculation" style="display:none;"></div>
+    <div id="productKnowledge" style="display:none;"></div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal-bg" id="addItemModal">
+    <div class="modal-card">
+        <button class="close-btn" onclick="closeAddItem()">×</button>
+        <h2>নতুন আইটেম যোগ করুন</h2>
+        <label>টাইটেল</label>
+        <input id="title">
+        <label>ডিসক্রিপশন</label>
+        <textarea id="desc"></textarea>
+        <label>ক্যাটাগরি</label>
+        <select id="category" onchange="toggleSubCategory()">
+            <option>Running Offer</option>
+            <option>Head Office Policy</option>
+            <option>Product Knowledge</option>
+        </select>
+        <div id="subCategoryDiv" style="display:none;">
+            <label>Sub Category (Product Knowledge)</label>
+            <select id="subCategory">
+                <option>Freeze</option>
+                <option>Home Appliance</option>
+                <option>Electric Appliance</option>
+                <option>Television</option>
+                <option>Other Knowledge</option>
+                <option>Air Conditioner</option>
+                <option>Washing Machine</option>
+                <option>T20</option>
+                <option>Accounts Head</option>
+            </select>
+        </div>
+        <label>মেয়াদ (Running Offer, optional)</label>
+        <input type="date" id="expiry">
+        <label>ফাইল (PDF/IMAGE)</label>
+        <input type="file" id="fileInput">
+        <button onclick="addItem()">সংরক্ষণ</button>
+    </div>
+</div>
+
+<div class="footer">
+MD HASANUR SHEIKH — MOBILE: 01913137607
+</div>
+
+<script>
+let items = JSON.parse(localStorage.getItem("items") || "[]");
+let currentTab = "running";
+
+/* DARK MODE */
+if(localStorage.getItem("dark")==="1"){document.getElementById("body").classList.add("dark");}
+function toggleDark(){document.getElementById("body").classList.toggle("dark"); localStorage.setItem("dark",document.getElementById("body").classList.contains("dark")?"1":"0");}
+
+/* OPEN/CLOSE ADD ITEM MODAL */
+function openAddItem(){document.getElementById("addItemModal").style.display="flex";}
+function closeAddItem(){document.getElementById("addItemModal").style.display="none";}
+
+/* TOGGLE SUBCATEGORY */
+function toggleSubCategory(){ document.getElementById("subCategoryDiv").style.display = (category.value==="Product Knowledge")?"block":"none"; }
+
+/* ADD ITEM */
+function addItem(){
+    let titleVal=title.value.trim();
+    let descVal=desc.value.trim();
+    let categoryVal=category.value;
+    let subCatVal=(categoryVal==="Product Knowledge")?subCategory.value:null;
+    let expiryVal=expiry.value;
+    let file=fileInput.files[0];
+
+    if(!titleVal) return alert("টাইটেল দিন");
+
+    if(file){ if(items.some(i=>i.fileName===file.name)) return alert("এই ফাইলটি আগেই আপলোড হয়েছে।"); }
+
+    let reader=new FileReader();
+    reader.onload=e=>{
+        items.push({
+            id:Date.now(),
+            title:titleVal,
+            desc:descVal,
+            category:categoryVal,
+            subCategory:subCatVal,
+            expiry:expiryVal,
+            fileName:file?file.name:null,
+            fileData:file?e.target.result:null,
+            entryDate: new Date().toISOString()
+        });
+        localStorage.setItem("items", JSON.stringify(items)); render();
+        title.value=""; desc.value=""; expiry.value=""; fileInput.value=""; category.value="Running Offer"; subCategory.value="Freeze";
+        closeAddItem();
+    };
+    if(file) reader.readAsDataURL(file);
+    else reader.onload({target:{result:null}});
+}
+
+/* RENDER ITEMS */
+function render(){
+    let searchText=document.getElementById("search").value.toLowerCase();
+    let today=new Date().toISOString().split("T")[0]; let todayDate=new Date();
+    let runHTML="", polHTML="", expHTML="", calcHTML="", pkHTML="";
+
+    items.forEach(i=>{
+        let expired=i.expiry && i.expiry<today;
+        let daysLeftText="";
+        if(i.category==="Running Offer" && i.expiry){
+            let diffDays=Math.ceil((new Date(i.expiry)-todayDate)/(1000*60*60*24));
+            if(diffDays>=0) daysLeftText=`<div class="date-badge">মেয়াদ বাকি: ${diffDays} দিন</div>`;
+        }
+        if(!i.title.toLowerCase().includes(searchText) && !i.desc.toLowerCase().includes(searchText)) return;
+        let badge="";
+        if(i.category==="Running Offer" && i.expiry) badge=daysLeftText;
+        if(expired) badge=`<div class="expired-badge">মেয়াদ শেষ!</div>`;
+        let fileButtons=i.fileData?`<a class="small-btn" target="_blank" href="${i.fileData}">ফাইল দেখুন</a><a class="small-btn" download="${i.fileName}" href="${i.fileData}">ডাউনলোড</a>`:"";
+        let entryDateHtml = `<span class="entry-date">এন্ট্রি তারিখ: ${new Date(i.entryDate).toLocaleString('bn-BD')}</span>`;
+        let box=`<div class="item-box" onclick="toggleEntryDate(this)">${entryDateHtml}<div class="item-header">${i.title}</div><div class="desc">${i.desc}</div>${badge}<br>${fileButtons}<br><a class="small-btn delete-btn" onclick="del(${i.id})">ডিলেট</a></div>`;
+        if(expired) expHTML+=box;
+        else if(i.category==="Head Office Policy") polHTML+=box;
+        else if(i.category==="Running Offer") runHTML+=box;
+        else if(i.category==="Product Knowledge") pkHTML+=box;
+    });
+
+    running.innerHTML=runHTML; policy.innerHTML=polHTML; expired.innerHTML=expHTML; productKnowledge.innerHTML=pkHTML;
+}
+
+/* DELETE */
+function del(id){ if(confirm("ডিলেট করবেন?")){ items=items.filter(a=>a.id!==id); localStorage.setItem("items",JSON.stringify(items)); render();}}
+
+/* SHOW TABS */
+function showTab(tab){ 
+    currentTab=tab; 
+    running.style.display="none"; policy.style.display="none"; expired.style.display="none"; calculation.style.display="none"; productKnowledge.style.display="none"; 
+    document.getElementById(tab).style.display="block"; 
+    document.querySelectorAll(".nav-btn").forEach(btn=>btn.classList.remove("active-tab")); 
+    document.querySelectorAll(".nav-btn")[tab==="running"?1:tab==="policy"?2:tab==="expired"?3:tab==="calculation"?4:5].classList.add("active-tab"); 
+}
+
+/* FILTER PRODUCT KNOWLEDGE BY SUBCATEGORY */
+function filterKnowledge(sub){
+    showTab('productKnowledge');
+    productKnowledge.innerHTML="";
+    items.forEach(i=>{
+        if(i.category==="Product Knowledge" && i.subCategory===sub){
+            let fileButtons=i.fileData?`<a class="small-btn" target="_blank" href="${i.fileData}">ফাইল দেখুন</a><a class="small-btn" download="${i.fileName}" href="${i.fileData}">ডাউনলোড</a>`:"";
+            let entryDateHtml = `<span class="entry-date">এন্ট্রি তারিখ: ${new Date(i.entryDate).toLocaleString('bn-BD')}</span>`;
+            let box=`<div class="item-box" onclick="toggleEntryDate(this)">${entryDateHtml}<div class="item-header">${i.title}</div><div class="desc">${i.desc}</div><br>${fileButtons}<br><a class="small-btn delete-btn" onclick="del(${i.id})">ডিলেট</a></div>`;
+            productKnowledge.innerHTML+=box;
+        }
+    });
+}
+
+/* MOBILE CLICK: SHOW/HIDE ENTRY DATE */
+function toggleEntryDate(elem){
+    let tooltip = elem.querySelector('.entry-date');
+    if(tooltip){
+        tooltip.style.display = tooltip.style.display==='block'?'none':'block';
+    }
+}
+
+render();
+openAddItem();
+</script>
+
+</body>
+</html>
